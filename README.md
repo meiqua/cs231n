@@ -1,5 +1,5 @@
 # cs231n
-cs231n assignment
-some record for impressive moment  
-## batchnorm_backward_alt_derivation  
+cs231n assignment  
+some record, for impressive moment  
+## batchnorm_backward_alt_derivation, assignment2
 derive the batchnorm_backward_alt by hand, to master the forward and backward
