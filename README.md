@@ -10,3 +10,4 @@ to do: matrix derivation
 
 ## knn compute_distances_no_loops, assignment1  
 to do: how?  
+[trick](https://medium.com/dataholiks-distillery/l2-distance-matrix-vectorization-trick-26aa3247ac6c)  
