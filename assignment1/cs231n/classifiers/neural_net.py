@@ -68,7 +68,8 @@ class TwoLayerNet(object):
     W1, b1 = self.params['W1'], self.params['b1']
     W2, b2 = self.params['W2'], self.params['b2']
     N, D = X.shape
-
+    H = W1.shape[1]
+    C = W2.shape[1]
     # Compute the forward pass
     scores = None
     #############################################################################
@@ -76,7 +77,9 @@ class TwoLayerNet(object):
     # Store the result in the scores variable, which should be an array of      #
     # shape (N, C).                                                             #
     #############################################################################
-    pass
+    X1 = np.maximum(0,X.dot(W1)+b1)
+    scores = X1.dot(W2)+b2
+    maskB = X1>0
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -93,7 +96,12 @@ class TwoLayerNet(object):
     # in the variable loss, which should be a scalar. Use the Softmax           #
     # classifier loss.                                                          #
     #############################################################################
-    pass
+    scores = scores - np.reshape(np.max(scores, axis=1), (N, -1))
+    # avoid numeric overflow
+    sfmx = np.exp(scores)/np.reshape(np.sum(np.exp(scores),axis=1),(N,-1))
+    maskA = np.zeros(shape=(N, C))
+    maskA[np.arange(N), y] = 1
+    loss = -np.sum(np.log(sfmx) * maskA)/N + reg * np.sum(W1 * W1)+ reg * np.sum(W2 * W2)
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -105,7 +113,13 @@ class TwoLayerNet(object):
     # and biases. Store the results in the grads dictionary. For example,       #
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
-    pass
+    dldscore = maskA.dot(np.ones(shape=(C, C))) * sfmx - maskA
+    # print(dldscore.shape)
+    # print(W2.shape)
+    # print(maskB.shape)
+    # print(X.shape)
+    grads['W2'] = X1.T.dot(dldscore) / N + 2 * reg * W2
+    grads['W1'] = X.T.dot(dldscore.dot(W2.T)*maskB) / N + 2 * reg * W1
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
