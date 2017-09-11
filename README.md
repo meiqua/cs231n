@@ -11,7 +11,7 @@ But the code is right.
 
 [墙裂推荐的求导教程](https://zhuanlan.zhihu.com/p/24709748)
 
-[vectorization](https://zhuanlan.zhihu.com/p/29148738)
+[vectorization using the above method](https://zhuanlan.zhihu.com/p/29148738)
 
 ## knn compute_distances_no_loops, assignment1  
 
