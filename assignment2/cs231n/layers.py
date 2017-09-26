@@ -25,7 +25,9 @@ def affine_forward(x, w, b):
     # TODO: Implement the affine forward pass. Store the result in out. You   #
     # will need to reshape the input into rows.                               #
     ###########################################################################
-    pass
+    N = x.shape[0]
+    x1 = np.reshape(x,(N, -1))
+    out = x1.dot(w)+b
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -53,7 +55,11 @@ def affine_backward(dout, cache):
     ###########################################################################
     # TODO: Implement the affine backward pass.                               #
     ###########################################################################
-    pass
+    N = x.shape[0]
+    x1 = np.reshape(x,(N, -1))
+    dx = np.reshape(dout.dot(w.T),x.shape)
+    dw = x1.T.dot(dout)
+    db = dout.T.dot(np.ones(N))
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -75,7 +81,8 @@ def relu_forward(x):
     ###########################################################################
     # TODO: Implement the ReLU forward pass.                                  #
     ###########################################################################
-    pass
+    mask = x>0
+    out = x*mask
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -98,7 +105,8 @@ def relu_backward(dout, cache):
     ###########################################################################
     # TODO: Implement the ReLU backward pass.                                 #
     ###########################################################################
-    pass
+    mask = x>0
+    dx = dout*mask
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -356,7 +364,28 @@ def conv_forward_naive(x, w, b, conv_param):
     # TODO: Implement the convolutional forward pass.                         #
     # Hint: you can use the function np.pad for padding.                      #
     ###########################################################################
-    pass
+
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape
+    S = conv_param['stride']
+    P = conv_param['pad']
+
+    # Add padding to each image
+    x_pad = np.pad(x, ((0,), (0,), (P,), (P,)), 'constant')
+    # Size of the output
+    Hh = int(1 + (H + 2 * P - HH) / S)
+    Hw = int(1 + (W + 2 * P - WW) / S)
+
+    out = np.zeros((N, F, Hh, Hw))
+
+    for n in range(N):  # First, iterate over all the images
+        for f in range(F):  # Second, iterate over all the kernels
+            for k in range(Hh):
+                for l in range(Hw):
+                    out[n, f, k, l] = np.sum(
+                        x_pad[n, :, k * S:k * S + HH, l * S:l * S + WW] * w[f, :]) + b[f]
+
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -381,7 +410,48 @@ def conv_backward_naive(dout, cache):
     ###########################################################################
     # TODO: Implement the convolutional backward pass.                        #
     ###########################################################################
-    pass
+    x, w, b, conv_param = cache
+    P = conv_param['pad']
+    x_pad = np.pad(x, ((0,), (0,), (P,), (P,)), 'constant')
+
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape
+    N, F, Hh, Hw = dout.shape
+    S = conv_param['stride']
+
+    # For dw: Size (C,HH,WW)
+    dw = np.zeros((F, C, HH, WW))
+    for fprime in range(F):
+        for cprime in range(C):
+            for i in range(HH):
+                for j in range(WW):
+                    sub_xpad = x_pad[:, cprime, i:i + Hh * S:S, j:j + Hw * S:S]
+                    dw[fprime, cprime, i, j] = np.sum(
+                        dout[:, fprime, :, :] * sub_xpad)
+
+    # For db : Size (F,)
+    db = np.zeros((F))
+    for fprime in range(F):
+        db[fprime] = np.sum(dout[:, fprime, :, :])
+
+    dx = np.zeros((N, C, H, W))
+    for nprime in range(N):
+        for i in range(H):
+            for j in range(W):
+                for f in range(F):
+                    for k in range(Hh):
+                        for l in range(Hw):
+                            mask1 = np.zeros_like(w[f, :, :, :])
+                            mask2 = np.zeros_like(w[f, :, :, :])
+                            if (i + P - k * S) < HH and (i + P - k * S) >= 0:
+                                mask1[:, i + P - k * S, :] = 1.0
+                            if (j + P - l * S) < WW and (j + P - l * S) >= 0:
+                                mask2[:, :, j + P - l * S] = 1.0
+                            w_masked = np.sum(
+                                w[f, :, :, :] * mask1 * mask2, axis=(1, 2))
+                            dx[nprime, :, i, j] += dout[nprime, f, k, l] * w_masked
+
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
